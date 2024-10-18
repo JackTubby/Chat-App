@@ -1,5 +1,5 @@
 import http from 'http'
-import { checkHttpVersion } from './utils/index'
+import { checkHttpVersion, checkHttpMethod } from './utils/index'
 
 const PORT = '8000'
 
@@ -8,21 +8,30 @@ const server = http.createServer(function (req, res) {
     /* TODO
      *  Check all headers/http versions match what they should be and are set (clean it up)
      *  Check if their is anything else to check with the above ^
-     * 
+     *
      * */
 
-
-
-    if (!req.method || req.method !== 'GET') {
-      throw new Error('Not correct HTTP method')
-    }
-    const httpVersion = req.httpVersion
-    const correctHttpVersion = checkHttpVersion(httpVersion)
-    const correctHttpMethod = true
-    const host = req?.headers?.host
-    const connection = req?.headers?.connection
+    const { host, connection, version, upgrade } = req?.headers
+    const { httpVersion, method } = req
     const key = req?.headers?.['sec-websocket-key']
-    const version = req?.headers?.version
+    const correctHttpVersion = checkHttpVersion(httpVersion)
+    const correctHttpMethod = checkHttpMethod(method || '')
+    if (
+      !correctHttpMethod ||
+      !correctHttpVersion ||
+      !host ||
+      host !== `http://localhost:${PORT}` ||
+      !upgrade ||
+      upgrade !== 'websocket' ||
+      !key ||
+      key !== '13' ||
+      !connection ||
+      connection != 'upgrade' ||
+      !version
+    ) {
+      res.statusCode = 400
+      res.write('Bad request!')
+    }
   } catch (error) {
     res.statusCode = 500
     res.write(error)
