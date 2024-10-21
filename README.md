@@ -38,8 +38,8 @@ If you're sending a very long message (more than 125 bytes), extra space (2 or 8
 
 #### Masking Key (If MASK is Set to 1)
 A masking key is used to hide the real message when it's sent from the client to the server. The server then "unmasks" it.
-| ------ | ---- | ----------- | ------------------------------------------------------------------------------------------------------------|
 | BUFFER | BIT  | REPRESENTS  | ABOUT                                                                                                       |
+| ------ | ---- | ----------- | ------------------------------------------------------------------------------------------------------------|
 | 4-7    | 0-31 | Masking Key | The masking key consists of 4 bytes. It is XOR-ed with the payload data to retrieve the original message.   |
 
 #### Payload Data
