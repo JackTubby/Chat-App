@@ -1,45 +1,75 @@
-import http from 'http'
-import { checkHttpVersion, checkHttpMethod } from './utils/index'
+import { createServer } from 'http'
+import { checkHttpVersion, checkHttpMethod, generateWebsocketResponseKey } from './utils/index'
+import crypto from 'crypto'
 
 const PORT = '8000'
+const MAGICKEY = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11'
+const SEVEN_BITS_INT_MARKER = 125
+const SIXTEEN_BITS_INT_MARKER = 126
+const SIXTY_FOUR_BITS_INT_MARKER = 127
 
-const server = http.createServer(function (req, res) {
+const server = createServer((req, res) => {
+  res.writeHead(200)
+  res.end('Hello')
+}).listen(PORT, () => console.log(`Server listening on port ${PORT}`))
+
+server.on('upgrade', onSocketUpgrade)
+
+function onSocketUpgrade(req: any, socket: any, head: any) {
   try {
-    /* TODO
-     *  Check all headers/http versions match what they should be and are set (clean it up)
-     *  Check if their is anything else to check with the above ^
-     *
-     * */
-
-    const { host, connection, version, upgrade } = req?.headers
-    const { httpVersion, method } = req
-    const key = req?.headers?.['sec-websocket-key']
-    const correctHttpVersion = checkHttpVersion(httpVersion)
-    const correctHttpMethod = checkHttpMethod(method || '')
-    if (
-      !correctHttpMethod ||
-      !correctHttpVersion ||
-      !host ||
-      host !== `http://localhost:${PORT}` ||
-      !upgrade ||
-      upgrade !== 'websocket' ||
-      !key ||
-      key !== '13' ||
-      !connection ||
-      connection != 'upgrade' ||
-      !version
-    ) {
-      res.statusCode = 400
-      res.write('Bad request!')
-    }
+    const { 'sec-websocket-key': webClientSocketKey } = req.headers
+    console.log(`${webClientSocketKey} connected!`)
+    const headers = prepareHandshakeHeaders(webClientSocketKey)
+  
+    socket.write(headers)
+    socket.on('readable', () => onSocketReadable(socket))
   } catch (error) {
-    res.statusCode = 500
-    res.write(error)
+    console.error('Error onSocketUpgrade', error)
+  }
+}
+
+function onSocketReadable(socket: any) {
+  if (!socket || typeof socket.read !== 'function') {
+    console.error('Socket is not readable')
+    return
+  }
+  const opcode = socket.read(1) // consume opcode
+  if (!opcode) {
+    console.error('No opcode found')
+    return
   }
 
-  res.end()
+  const [markerAndPayloadLength] = socket.read(1)
+  console.log('markerAndPayloadLength', markerAndPayloadLength)
+  const lengthIndicator = markerAndPayloadLength - 128
+  console.log('lengthIndicator', lengthIndicator)
+  let messageLength = 0
+
+}
+
+function prepareHandshakeHeaders(id: any) {
+  const acceptKey = createSocketAccept(id)
+  const headers = [
+    'HTTP/1.1 101 Switching Protocols',
+    'Upgrade: websocket',
+    'Connection: Upgrade',
+    `Sec-WebSocket-Accept: ${acceptKey}`,
+    ''
+  ]
+    .map((line) => line.concat('\r\n'))
+    .join('')
+  return headers
+}
+
+function createSocketAccept(id: string) {
+  const encryption = crypto.createHash('sha1')
+  encryption.update(id + MAGICKEY)
+  return encryption.digest('base64')
+}
+
+;['uncaughtException', 'unhandledRejection'].forEach((e) => {
+  process.on(e, (err) => {
+    console.error(`Something went wrong: ${e}`, `message: ${err.stack || err}`)
+  })
 })
 
-server.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`)
-})

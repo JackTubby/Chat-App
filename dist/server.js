@@ -3,43 +3,67 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const http_1 = __importDefault(require("http"));
-const index_1 = require("./utils/index");
+const http_1 = require("http");
+const crypto_1 = __importDefault(require("crypto"));
 const PORT = '8000';
-const server = http_1.default.createServer(function (req, res) {
-    var _a;
+const MAGICKEY = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
+const SEVEN_BITS_INT_MARKER = 125;
+const SIXTEEN_BITS_INT_MARKER = 126;
+const SIXTY_FOUR_BITS_INT_MARKER = 127;
+const server = (0, http_1.createServer)((req, res) => {
+    res.writeHead(200);
+    res.end('Hello');
+}).listen(PORT, () => console.log(`Server listening on port ${PORT}`));
+server.on('upgrade', onSocketUpgrade);
+function onSocketUpgrade(req, socket, head) {
     try {
-        /* TODO
-         *  Check all headers/http versions match what they should be and are set (clean it up)
-         *  Check if their is anything else to check with the above ^
-         *
-         * */
-        const { host, connection, version, upgrade } = req === null || req === void 0 ? void 0 : req.headers;
-        const { httpVersion, method } = req;
-        const key = (_a = req === null || req === void 0 ? void 0 : req.headers) === null || _a === void 0 ? void 0 : _a['sec-websocket-key'];
-        const correctHttpVersion = (0, index_1.checkHttpVersion)(httpVersion);
-        const correctHttpMethod = (0, index_1.checkHttpMethod)(method || '');
-        if (!correctHttpMethod ||
-            !correctHttpVersion ||
-            !host ||
-            host !== `http://localhost:${PORT}` ||
-            !upgrade ||
-            upgrade !== 'websocket' ||
-            !key ||
-            key !== '13' ||
-            !connection ||
-            connection != 'upgrade' ||
-            !version) {
-            res.statusCode = 400;
-            res.write('Bad request!');
-        }
+        const { 'sec-websocket-key': webClientSocketKey } = req.headers;
+        console.log(`${webClientSocketKey} connected!`);
+        const headers = prepareHandshakeHeaders(webClientSocketKey);
+        socket.write(headers);
+        socket.on('readable', () => onSocketReadable(socket));
     }
     catch (error) {
-        res.statusCode = 500;
-        res.write(error);
+        console.error('Error onSocketUpgrade', error);
     }
-    res.end();
-});
-server.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}`);
+}
+function onSocketReadable(socket) {
+    if (!socket || typeof socket.read !== 'function') {
+        console.error('Socket is not readable');
+        return;
+    }
+    const opcode = socket.read(1); // consume opcode
+    if (!opcode) {
+        console.error('No opcode found');
+        return;
+    }
+    const [markerAndPayloadLength] = socket.read(1);
+    console.log('markerAndPayloadLength', markerAndPayloadLength);
+    const lengthIndicator = markerAndPayloadLength - 128;
+    console.log('lengthIndicator', lengthIndicator);
+    let messageLength = 0;
+}
+function prepareHandshakeHeaders(id) {
+    const acceptKey = createSocketAccept(id);
+    const headers = [
+        'HTTP/1.1 101 Switching Protocols',
+        'Upgrade: websocket',
+        'Connection: Upgrade',
+        `Sec-WebSocket-Accept: ${acceptKey}`,
+        ''
+    ]
+        .map((line) => line.concat('\r\n'))
+        .join('');
+    return headers;
+}
+function createSocketAccept(id) {
+    const encryption = crypto_1.default.createHash('sha1');
+    encryption.update(id + MAGICKEY);
+    return encryption.digest('base64');
+}
+;
+['uncaughtException', 'unhandledRejection'].forEach((e) => {
+    process.on(e, (err) => {
+        console.error(`Something went wrong: ${e}`, `message: ${err.stack || err}`);
+    });
 });

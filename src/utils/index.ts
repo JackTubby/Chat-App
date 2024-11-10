@@ -1,3 +1,5 @@
+import crypto from 'crypto'
+
 function checkHttpVersion(version: string) {
   try {
     if (!version) throw 'No data passed'
@@ -20,4 +22,14 @@ function checkHttpMethod(method: string) {
   return true
 }
 
-export { checkHttpVersion, checkHttpMethod }
+function generateWebsocketResponseKey(key: string, string: string) {
+  if (!key) return false
+  if (!string) return false
+
+  const hash = crypto.createHash('sha1')
+  hash.update(key)
+  hash.update(string)
+  return hash.digest('base64')
+}
+
+export { checkHttpVersion, checkHttpMethod, generateWebsocketResponseKey }
