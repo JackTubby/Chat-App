@@ -28,6 +28,38 @@ function onSocketUpgrade(req, socket, head) {
         console.error('Error onSocketUpgrade', error);
     }
 }
+function sendMessage(msg, socket) {
+    const dataFrameBuffer = prepareMessage(msg);
+    socket.write(dataFrameBuffer);
+}
+function prepareMessage(msg) {
+    const message = Buffer.from(msg);
+    const messageSize = message.length;
+    let dataFrameBuffer;
+    let offset = 2;
+    // 0x80 = 128 = 10000000
+    // 0x01 = 1 = 00000001
+    const firstByte = 0x80 | 0x01; // single frame + text
+    if (messageSize <= SEVEN_BITS_INT_MARKER) {
+        const bytes = [firstByte];
+        dataFrameBuffer = Buffer.from(bytes.concat(messageSize));
+    }
+    else {
+        throw new Error('Your message is too long, we do not handle 64 bit messages');
+    }
+    const totalLength = dataFrameBuffer.length + messageSize;
+    const dataFrameResponse = concat([dataFrameBuffer, message], totalLength);
+    return dataFrameResponse;
+}
+function concat(bufferList, totalLength) {
+    const target = Buffer.allocUnsafe(totalLength);
+    let offset = 0;
+    for (const buffer of bufferList) {
+        target.set(buffer, offset);
+        offset += buffer.length;
+    }
+    return target;
+}
 function onSocketReadable(socket) {
     socket.read(1); // consume opcode
     const [markerAndPayloadLength] = socket.read(1);
@@ -48,7 +80,9 @@ function onSocketReadable(socket) {
     const decoded = unmask(encoded, maskKey);
     const received = decoded.toString('utf8');
     const data = JSON.parse(received);
-    console.log("Messaged received!", data);
+    console.log('Message Received: ', data);
+    const msg = JSON.stringify(data);
+    sendMessage(msg, socket);
 }
 function unmask(encodedBuffer, maskKey) {
     const finalBuffer = Buffer.from(encodedBuffer);
