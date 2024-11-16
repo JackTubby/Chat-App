@@ -6,6 +6,7 @@ const PORT = '8000'
 const MAGICKEY = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11'
 const SEVEN_BITS_INT_MARKER = 125
 const SIXTEEN_BITS_INT_MARKER = 126
+const MAXIMUM_SIXTEEN_BITS_INT = 2 ** 16 // 0 to 65536
 const SIXTY_FOUR_BITS_INT_MARKER = 127
 const MASK_KEY_BYTES_LENGTH = 4
 
@@ -39,7 +40,6 @@ function prepareMessage(msg: string) {
   const messageSize = message.length
 
   let dataFrameBuffer
-  let offset = 2
 
   // 0x80 = 128 = 10000000
   // 0x01 = 1 = 00000001
@@ -47,8 +47,23 @@ function prepareMessage(msg: string) {
   if (messageSize <= SEVEN_BITS_INT_MARKER) {
     const bytes = [firstByte]
     dataFrameBuffer = Buffer.from(bytes.concat(messageSize))
-  } else {
-    throw new Error('Your message is too long, we do not handle 64 bit messages')
+  } else if (messageSize <= MAXIMUM_SIXTEEN_BITS_INT) {
+    const offsetFourBytes = 4
+    const target = Buffer.allocUnsafe(offsetFourBytes)
+    target[0] = firstByte
+    target[1] = SIXTEEN_BITS_INT_MARKER | 0x0 // 0x80 = 128 = 10000000
+    target.writeUInt16BE(messageSize, 2) // content length is 2 bytes
+    dataFrameBuffer = target
+
+    // alloc 4 bytes
+    // [0] = 129 = 10000001 = 0x81 that is the fin + opcode
+    // [1] = 126 = 01111110 = 0x7E that is the 126 payload length marker + mask indicator
+    // [2] 0 - content length
+    // [3] 113 - content length 
+    // [4 - ..] = message
+  }
+  else {
+    throw new Error('Your message is too long, we do not handle sending 64 bit messages')
   }
   const totalLength = dataFrameBuffer.length + messageSize
   const dataFrameResponse = concat([dataFrameBuffer, message], totalLength)
@@ -79,7 +94,11 @@ function onSocketReadable(socket: any) {
   let messageLength = 0
   if (lengthIndicator <= SEVEN_BITS_INT_MARKER) {
     messageLength = lengthIndicator
-  } else {
+  } else if (lengthIndicator === SIXTEEN_BITS_INT_MARKER) {
+    // unsigned big-edian 16 bit integer [0 -65k] - 2 ** 16
+    messageLength = socket.read(2).readUInt16BE(0)
+  }
+  else {
     throw new Error('Your message is too long, we do not handle 64 bit messages')
   }
 
@@ -92,6 +111,7 @@ function onSocketReadable(socket: any) {
 
   const msg = JSON.stringify({
     message: data,
+    at: new Date().toISOString(),
   })
   sendMessage(msg, socket)
 }
