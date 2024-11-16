@@ -70,6 +70,7 @@ function prepareMessage(msg: string) {
   return dataFrameResponse
 }
 
+// TODO: replace this function with Buffer.concat
 function concat(bufferList: Buffer[], totalLength: number): Buffer {
   const target = Buffer.allocUnsafe(totalLength)
   let offset = 0

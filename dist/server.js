@@ -65,6 +65,7 @@ function prepareMessage(msg) {
     const dataFrameResponse = concat([dataFrameBuffer, message], totalLength);
     return dataFrameResponse;
 }
+// TODO: replace this function with Buffer.concat
 function concat(bufferList, totalLength) {
     const target = Buffer.allocUnsafe(totalLength);
     let offset = 0;
