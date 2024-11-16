@@ -8,7 +8,9 @@
 </head>
 
 <body>
-  <output id="messages"></output>
+  <output id="messages">
+    <h1>Messages</h1>
+  </output>
   <script>
     const messages = document.getElementById("messages")
     const socket = new WebSocket("ws://localhost:8000")
@@ -28,7 +30,11 @@
 
       socket.send(data)
     }
-    socket.onmessage = (e) => console.log("I got a message!", e)
+    socket.onmessage = (msg) => {
+      const message = msg.data
+      console.log("I got a message!", message)
+      messages.innerHTML += `<br/>${message}`
+    }
     socket.onerror = (e) => console.error("WebSocket error", e)
     socket.onclose = (e) => console.log("Disconnected from the WebSocket server")
   </script>
