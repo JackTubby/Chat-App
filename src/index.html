@@ -10,7 +10,7 @@
 <body>
   <output id="messages">
     <h1>Messages</h1>
-  </output>
+  </output>`
   <script>
     const messages = document.getElementById("messages")
     const socket = new WebSocket("ws://localhost:8000")
@@ -18,22 +18,42 @@
       console.log("WebSocket is connected!")
       const id = Math.round(Math.random() * 100)
       console.log('Sending...', id)
-      const data = JSON.stringify({
-        id,
-        name:  "John Doe",
-        address: {
-          street: "Street",
-          number: 20
+      const data = JSON.stringify([
+        {
+          id,
+          name: "John Doe",
+          address: {
+            street: "Street 1",
+            number: 20
+          },
+          proffesion: "Developer"
         },
-        proffesion: "Developer"
-      })
+        {
+          id,
+          name: "Jane Doe",
+          address: {
+            street: "Street 2",
+            number: 30
+          },
+          proffesion: "Designer"
+        },
+        {
+          id,
+          name: "Noel Doe",
+          address: {
+            street: "Street 3",
+            number: 40
+          },
+          proffesion: "Dancer"
+        }
+      ])
 
       socket.send(data)
     }
     socket.onmessage = (msg) => {
       const message = msg.data
       console.log("I got a message!", message)
-      messages.innerHTML += `<br/>${message}`
+      messages.innerHTML += `<div>${message}</div>`
     }
     socket.onerror = (e) => console.error("WebSocket error", e)
     socket.onclose = (e) => console.log("Disconnected from the WebSocket server")
