@@ -90,7 +90,9 @@ function onSocketReadable(socket: any) {
   const data = JSON.parse(received)
   console.log('Message Received: ', data)
 
-  const msg = JSON.stringify(data)
+  const msg = JSON.stringify({
+    message: data,
+  })
   sendMessage(msg, socket)
 }
 

@@ -81,7 +81,9 @@ function onSocketReadable(socket) {
     const received = decoded.toString('utf8');
     const data = JSON.parse(received);
     console.log('Message Received: ', data);
-    const msg = JSON.stringify(data);
+    const msg = JSON.stringify({
+        message: data,
+    });
     sendMessage(msg, socket);
 }
 function unmask(encodedBuffer, maskKey) {
