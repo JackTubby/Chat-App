@@ -18,6 +18,7 @@
       console.log("WebSocket is connected!")
       const id = Math.round(Math.random() * 100)
       console.log('Sending...', id)
+      const intervalId = setInterval(() => {
       const data = JSON.stringify([
         {
           id,
@@ -49,6 +50,11 @@
       ])
 
       socket.send(data)
+    }, 1000)
+
+    setTimeout(() => {
+      clearInterval(intervalId)
+    }, 10000)
     }
     socket.onmessage = (msg) => {
       const message = msg.data
