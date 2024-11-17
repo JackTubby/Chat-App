@@ -5,14 +5,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const app = (0, express_1.default)();
-const PORT = '8000';
-const routes_1 = __importDefault(require("./routes"));
-app.use(routes_1.default);
-app.listen(PORT, () => {
-    console.log('Server is listening on PORT', PORT);
+app.get("/", (req, res) => {
+    res.send("Hello World!");
 });
 // import { createServer } from 'http'
 // import crypto from 'crypto'
+// const PORT = '8000'
 // const MAGICKEY = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11'
 // const SEVEN_BITS_INT_MARKER = 125
 // const SIXTEEN_BITS_INT_MARKER = 126

@@ -12,57 +12,57 @@
     <h1>Messages</h1>
   </output>`
   <script>
-    const messages = document.getElementById("messages")
-    const socket = new WebSocket("ws://localhost:8000")
-    socket.onopen = (e) => {
-      console.log("WebSocket is connected!")
-      const id = Math.round(Math.random() * 100)
-      console.log('Sending...', id)
-      const intervalId = setInterval(() => {
-      const data = JSON.stringify([
-        {
-          id,
-          name: "John Doe",
-          address: {
-            street: "Street 1",
-            number: 20
-          },
-          proffesion: "Developer"
-        },
-        {
-          id,
-          name: "Jane Doe",
-          address: {
-            street: "Street 2",
-            number: 30
-          },
-          proffesion: "Designer"
-        },
-        {
-          id,
-          name: "Noel Doe",
-          address: {
-            street: "Street 3",
-            number: 40
-          },
-          proffesion: "Dancer"
-        }
-      ])
+    // const messages = document.getElementById("messages")
+    // const socket = new WebSocket("ws://localhost:8000")
+    // socket.onopen = (e) => {
+    //   console.log("WebSocket is connected!")
+    //   const id = Math.round(Math.random() * 100)
+    //   console.log('Sending...', id)
+    //   const intervalId = setInterval(() => {
+    //   const data = JSON.stringify([
+    //     {
+    //       id,
+    //       name: "John Doe",
+    //       address: {
+    //         street: "Street 1",
+    //         number: 20
+    //       },
+    //       proffesion: "Developer"
+    //     },
+    //     {
+    //       id,
+    //       name: "Jane Doe",
+    //       address: {
+    //         street: "Street 2",
+    //         number: 30
+    //       },
+    //       proffesion: "Designer"
+    //     },
+    //     {
+    //       id,
+    //       name: "Noel Doe",
+    //       address: {
+    //         street: "Street 3",
+    //         number: 40
+    //       },
+    //       proffesion: "Dancer"
+    //     }
+    //   ])
 
-      socket.send(data)
-    }, 1000)
+    //   socket.send(data)
+    // }, 1000)
 
-    setTimeout(() => {
-      clearInterval(intervalId)
-    }, 10000)
-    }
-    socket.onmessage = (msg) => {
-      const message = msg.data
-      console.log("I got a message!", message)
-      messages.innerHTML += `<div>${message}</div>`
-    }
-    socket.onerror = (e) => console.error("WebSocket error", e)
-    socket.onclose = (e) => console.log("Disconnected from the WebSocket server")
+    // setTimeout(() => {
+    //   clearInterval(intervalId)
+    // }, 10000)
+    // }
+    // socket.onmessage = (msg) => {
+    //   const message = msg.data
+    //   console.log("I got a message!", message)
+    //   messages.innerHTML += `<div>${message}</div>`
+    // }
+    // socket.onerror = (e) => console.error("WebSocket error", e)
+    // socket.onclose = (e) => console.log("Disconnected from the WebSocket server")
   </script>
 </body>
 
